@@ -9,8 +9,9 @@ typedef struct GInfo
 
 struct Glist
 {
-	PtrGinfo atual;
+	PtrGinfo root;
 	PtrGinfo iterator;
+	PtrGinfo last;
 	size_t size;
 	int (*compare)(void*, void*);
 	int (*get_key)(void*, char*);
@@ -33,9 +34,10 @@ int init_generic_list(PtrGlist* list, int (*compare)(void*, void*),
 	(*list)->compare = compare;
 	(*list)->get_key = get_key;
 
-	(*list)->atual = NULL;
+	(*list)->root = NULL;
 	(*list)->length = 0;
 	(*list)->iterator = NULL;
+	(*list)->last = NULL;
 
 	return 0;
 }
@@ -49,11 +51,13 @@ int insert_head(PtrGlist list, void * data)
 
 	res->data = (void *)malloc(list->size);
 	memcpy(res->data, data, list->size);
-	res->next = list->atual;
-	list->atual = res;
+	if(list->root == NULL)
+		list->last = res;
+	res->next = list->root;
+	list->root = res;
 	list->iterator = res;
-
 	list->length++;
+
 
 	return 0;
 }
@@ -71,18 +75,25 @@ int insert_tail(PtrGlist list, void * data)
 	memcpy(res->data, data, list->size);
 
 	//Empty list case
-	if (list->atual == NULL)
+	if (list->root == NULL)
 	{
 		res->next = NULL;
-		list->length++;
-		list->atual = res;
+		//list->length++;
+		list->root = res;
 		list->iterator = res;
+		list->last = res;
 	}
 	else {
 		//non empty
-		for (iterator = list->atual; iterator->next != NULL; iterator = iterator->next)
+		//for (iterator = list->root; iterator->next != NULL; iterator = iterator->next)
 			;
-		iterator->next = res;
+		//iterator->next = res;
+
+		//list->root->next == NULL
+
+		list->last->next = res;
+		res->next = NULL;
+		list->last = res;
 	}
 
 	list->length++;
@@ -99,7 +110,7 @@ int get_element(PtrGlist list, void * info, char* key)
 	if (list->length == 0)
 		return (-2);
 
-	PtrGinfo iterator = list->atual;
+	PtrGinfo iterator = list->root;
 
 	for (; iterator != NULL ; iterator = iterator->next)
 		if (list->get_key(iterator->data, key) == 0) {
@@ -116,26 +127,26 @@ void clear_all(PtrGlist list)
 	if (list == NULL)
 		return;
 
-	PtrGinfo iterator = list->atual, atual;
+	PtrGinfo iterator = list->root, root;
 
 	while (iterator != NULL)
 	{
 		free(iterator->data);
 		iterator->data = NULL;
-		atual = iterator;
+		root = iterator;
 		iterator = iterator->next;
-		free(atual);
-		atual = NULL;
+		free(root);
+		root = NULL;
 		list->length--;
 	}
 
-	list->atual = NULL;
+	list->root = NULL;
 	list->iterator = NULL;
 }
 
 int remove_element(PtrGlist list, void* elem)
 {
-	PtrGinfo iterator = list->atual, last = NULL;
+	PtrGinfo iterator = list->root, last = NULL;
 
 	if (list == NULL || elem == NULL)
 		return (-1);
@@ -146,7 +157,9 @@ int remove_element(PtrGlist list, void* elem)
 	//Element in head.
 	if (list->compare(iterator->data, elem) == 0)
 	{
-		list->atual = iterator->next;
+		if(iterator->next == NULL)
+			list->last = NULL;
+		list->root = iterator->next;
 		list->iterator = iterator->next;
 
 		free(iterator->data);
@@ -162,6 +175,8 @@ int remove_element(PtrGlist list, void* elem)
 	{
 		if (list->compare(iterator->data, elem) == 0)
 		{
+			if(iterator->next == NULL)
+				list->last = last;
 			last->next = iterator->next;
 			free(iterator->data);
 			iterator->data = NULL;
@@ -184,7 +199,7 @@ int get_iterator(PtrGlist list, void * res)
 
 	if (list->iterator == NULL)
 	{
-		list->iterator = list->atual;
+		list->iterator = list->root;
 		return 1;
 	}
 	else
@@ -201,17 +216,18 @@ int insert_order(PtrGlist list, void* info)
 	if (list == NULL || info == NULL)
 		return (-1);
 
-	PtrGinfo iterator = list->atual, last = NULL, listNew;
+	PtrGinfo iterator = list->root, last = NULL, listNew;
 
 	//empty case
 	if (iterator == NULL)
 	{
-		list->atual = (PtrGinfo)malloc(sizeof(Sginfo));
-		list->atual->data = (void*)malloc(list->size);
-		memcpy(list->atual->data, info, list->size);
-		list->atual->next = NULL;
-		list->iterator = list->atual;
+		list->root = (PtrGinfo)malloc(sizeof(Sginfo));
+		list->root->data = (void*)malloc(list->size);
+		memcpy(list->root->data, info, list->size);
+		list->root->next = NULL;
+		list->iterator = list->root;
 		list->length++;
+		list->last = list->root;
 		return 0;
 	}
 
@@ -226,12 +242,16 @@ int insert_order(PtrGlist list, void* info)
 	//Insert in first cycle
 	if (last == NULL)
 	{
-		list->atual = listNew;
+		list->root = listNew;
 		list->iterator = listNew;
 	}
 	//middle or final
-	else
+	else{
+		if(last->next == NULL)
+			list->last = listNew;
 		last->next = listNew;
+
+	}
 
 	listNew->next = iterator;
 

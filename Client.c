@@ -106,15 +106,50 @@ int main(int argc, char const *argv[])
 	printf("List size:%d\n", get_size(list));
 
 	//Insert order
-	puts("\n\n#### [TEST] Insert order ####\n\n");
+	puts("\n\n#### [TEST] Test O(1) insertTail ####\n\n");
+	puts("\n## [1] Final List Expected : [3, Anthony, Andre,Test, JohnDoe,4] | size:6 ##\n");
 
 	(void) insert_order(list, create_client("Anthony", 41));
 	(void) insert_order(list, create_client("Andre", 31));
 	(void) insert_order(list, create_client("Test", 21));
 	(void) insert_order(list, create_client("JohnDoe", 11));
+	(void) insert_head(list, create_client("3", 41));
+	(void) insert_tail(list, create_client("4", 41));
+
+
 	print_generic_struct(list);
 	printf("List size:%d\n", get_size(list));
 
+	puts("\n## [2] Final List Expected : [1,2,4] | size:3 ##\n");
+	clear_all(list);
+	(void) insert_head(list, create_client("3", 41));
+	(void) insert_head(list, create_client("2", 31));
+	(void) insert_head(list, create_client("1", 21));
+	flag = remove_element(list, create_client("3", 35));
+	printf("Result remove:%d\n", flag);
+	(void) insert_tail(list, create_client("4", 41));
+	print_generic_struct(list);
+	printf("List size:%d\n", get_size(list));
+
+	puts("\n## [3] Final List Expected : [3,4] | size:2 ##\n");
+	clear_all(list);
+	(void) insert_head(list, create_client("3", 41));
+	(void) insert_tail(list, create_client("4", 41));
+	(void) insert_head(list, create_client("2", 31));
+	print_generic_struct(list);
+	printf("List size:%d\n", get_size(list));
+	flag = remove_element(list, create_client("2", 35));
+	printf("Result remove:%d\n", flag);
+	print_generic_struct(list);
+	printf("List size:%d\n", get_size(list));
+
+
+	puts("\n## [4] Final List Expected : [5] , size:1 ##\n");
+	(void) remove_element(list, create_client("4", 35));
+	(void) remove_element(list, create_client("3", 35));
+	(void) insert_tail(list, create_client("5", 41));
+	print_generic_struct(list);
+	printf("List size:%d\n", get_size(list));
 
 
 
